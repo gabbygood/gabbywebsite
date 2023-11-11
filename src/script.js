@@ -5,6 +5,8 @@ import * as dat from 'lil-gui'
 import { FontLoader } from 'three/examples/jsm/loaders/FontLoader.js'
 import { TextGeometry } from 'three/examples/jsm/geometries/TextGeometry.js'
 import typefaceFont from 'three/examples/fonts/helvetiker_regular.typeface.json'
+import firefliesVertexShader from './shaders/fireflies/vertex.glsl'
+import firefliesFragmentShader from './shaders/fireflies/fragment.glsl'
 
 /**
  * Base
@@ -13,7 +15,7 @@ import typefaceFont from 'three/examples/fonts/helvetiker_regular.typeface.json'
 const gui = new dat.GUI()
 
 // Canvas
-const canvas = document.querySelector('canvas.webgl')
+const canvas = document.querySelector('.webgl')
 
 // Scene
 const scene = new THREE.Scene()
@@ -22,7 +24,7 @@ const scene = new THREE.Scene()
  * Textures
  */
 const textureLoader = new THREE.TextureLoader()
-const matcapTexture = textureLoader.load('textures/matcaps/8.png')
+const matcapTexture = textureLoader.load('textures/matcaps/5.png')
 
 /**
  * Fonts
@@ -38,7 +40,7 @@ fontLoader.load(
 
         // Text
         const textGeometry = new TextGeometry(
-            'Gabrielle Goylan',
+            'Trisha Boneo',
             {
                 font: font,
                 size: 0.5,
@@ -75,6 +77,53 @@ fontLoader.load(
     }
 )
 
+const firefliesGeometry = new THREE.BufferGeometry()
+const firefliesCount = 100
+const positionArray = new Float32Array(firefliesCount * 3)
+const scaleArray = new Float32Array(firefliesCount)
+
+for (let i = 0; i < firefliesCount; i++) {
+  positionArray[i * 3 + 0] = (Math.random() - 0.5) * 4
+  positionArray[i * 3 + 1] = Math.random() * 1.5
+  positionArray[i * 3 + 2] = (Math.random() - 0.5) * 4
+
+  scaleArray[i] = Math.random()
+}
+
+firefliesGeometry.setAttribute(
+  'position',
+  new THREE.BufferAttribute(positionArray, 3)
+)
+firefliesGeometry.setAttribute(
+  'aScale',
+  new THREE.BufferAttribute(scaleArray, 1)
+)
+
+// Material
+const firefliesMaterial = new THREE.ShaderMaterial({
+  uniforms: {
+    uTime: { value: 0 },
+    uPixelRatio: { value: Math.min(window.devicePixelRatio, 2) },
+    uSize: { value: 100 },
+  },
+  vertexShader: firefliesVertexShader,
+  fragmentShader: firefliesFragmentShader,
+  transparent: true,
+  blending: THREE.AdditiveBlending,
+  depthWrite: false,
+})
+
+gui
+  .add(firefliesMaterial.uniforms.uSize, 'value')
+  .min(0)
+  .max(500)
+  .step(1)
+  .name('firefliesSize')
+
+// Points
+const fireflies = new THREE.Points(firefliesGeometry, firefliesMaterial)
+scene.add(fireflies)
+
 /**
  * Sizes
  */
@@ -85,17 +134,24 @@ const sizes = {
 
 window.addEventListener('resize', () =>
 {
-    // Update sizes
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
+  // Update sizes
+  sizes.width = window.innerWidth
+  sizes.height = window.innerHeight
 
-    // Update camera
-    camera.aspect = sizes.width / sizes.height
-    camera.updateProjectionMatrix()
+  // Update camera
+  camera.aspect = sizes.width / sizes.height
+  camera.updateProjectionMatrix()
 
-    // Update renderer
-    renderer.setSize(sizes.width, sizes.height)
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+  // Update renderer
+  renderer.setSize(sizes.width, sizes.height)
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+  //fireflies
+  //fireflies
+  firefliesMaterial.uniforms.uPixelRatio.value = Math.min(
+    window.devicePixelRatio,
+    2
+  )
 })
 
 /**
@@ -135,9 +191,14 @@ const tick = () =>
 
     // Render
     renderer.render(scene, camera)
+    
+    //fireflies
+    firefliesMaterial.uniforms.uTime.value = elapsedTime
 
     // Call tick again on the next frame
     window.requestAnimationFrame(tick)
+
 }
 
 tick()
+

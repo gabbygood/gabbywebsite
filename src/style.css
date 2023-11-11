@@ -8,6 +8,7 @@ html,
 body
 {
     overflow: hidden;
+    display: flex;
 }
 
 .webgl
@@ -16,4 +17,5 @@ body
     top: 0;
     left: 0;
     outline: none;
+    width: 500px;
 }
